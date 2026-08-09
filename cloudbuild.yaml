@@ -4,26 +4,32 @@
 #   gcloud builds submit --config cloudbuild.yaml .
 # or let deploy-cloudrun.sh do the whole thing including API enablement.
 #
-# WHY CLOUD RUN: the image needs ~600-800MB RSS at steady state (torch + HuBERT
-# + one voice). Render's 512MB tiers OOM; Cloud Run gives 2GiB and scales to
-# zero, so an occasional card game stays inside the monthly free allowance.
+# TWO MODES, very different resource profiles:
 #
-# BUILD COST NOTE: this build installs CPU torch and downloads ~550MB of voice
-# weights, so it takes roughly 15-25 minutes. The default machine is small, so
-# we ask for a bigger one and a bigger disk — otherwise the docker layers for
-# torch can fill the default 100GB-shared workspace on retries.
+#   _VOICE_MODE=tts (default)
+#     Thin Edge TTS proxy. No torch, no weights. ~70MB RSS, ~200MB image,
+#     2-3 minute builds, 512MiB is plenty and cold starts are quick.
+#
+#   _VOICE_MODE=rvc
+#     Adds torch + HuBERT + voice weights. ~600-800MB RSS, ~4GB image, 15-25
+#     minute builds. Needs 2Gi and a low concurrency (inference is serialised
+#     behind a lock, so extra concurrency only builds a queue that outlives the
+#     request timeout). deploy-cloudrun.sh picks these numbers for you.
 
 substitutions:
   _SERVICE: cabo
   _REGION: asia-east1        # Taiwan — lowest latency from mainland/HK phones
   _REPO: cabo                # Artifact Registry repository name
-  _MODEL_ALLOW: "*"          # e.g. "nanami*" for a much smaller, faster image
-  _INCLUDE_INDEX: "0"        # "1" bakes in .index files (bigger + more RAM)
-  _MEMORY: 2Gi
-  _CPU: "2"
+  _VOICE_MODE: tts           # "tts" (light, default) or "rvc" (heavy)
+  _MODEL_ALLOW: "*"          # rvc only: e.g. "nanami*" for a smaller image
+  _INCLUDE_INDEX: "0"        # rvc only: "1" bakes in .index files
+  _MEMORY: 512Mi             # rvc needs 2Gi
+  _CPU: "1"                  # rvc wants 2
+  _CONCURRENCY: "20"         # rvc wants 4
+  _EXTRA_ENV: ""             # appended to --set-env-vars, e.g. ",EDGE_RATE=+15%"
 
 # 60 minutes is the platform default; stated explicitly so a slow torch mirror
-# cannot silently kill a build that is otherwise fine.
+# cannot silently kill an rvc build that is otherwise fine.
 timeout: 3600s
 
 options:
@@ -43,6 +49,7 @@ steps:
     name: gcr.io/cloud-builders/docker
     args:
       - build
+      - '--build-arg=VOICE_MODE=${_VOICE_MODE}'
       - '--build-arg=MODEL_ALLOW=${_MODEL_ALLOW}'
       - '--build-arg=INCLUDE_INDEX=${_INCLUDE_INDEX}'
       - '-t'
@@ -61,14 +68,10 @@ steps:
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}'
 
   # 3) Deploy.
-  #    --concurrency 4  : inference is serialised behind a lock, so a high
-  #                       concurrency just builds a queue that outlives the
-  #                       request timeout.
-  #    --timeout 300    : a cold instance must load HuBERT before the first
-  #                       synthesis; the default 5 min covers it.
-  #    --min-instances 0: scale to zero. Cold starts cost ~30-60s but idle time
-  #                       is free. Set to 1 (with --no-cpu-throttling) if you
-  #                       would rather pay to keep the voice instantly ready.
+  #    --timeout 300    : generous. In tts mode a request is ~2s; in rvc mode a
+  #                       cold instance must load HuBERT first.
+  #    --min-instances 0: scale to zero — idle time is free. Set to 1 (with
+  #                       --no-cpu-throttling) to pay for an always-warm voice.
   - id: deploy
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
@@ -84,8 +87,8 @@ steps:
       - '--memory=${_MEMORY}'
       - '--cpu=${_CPU}'
       - '--timeout=300'
-      - '--concurrency=4'
+      - '--concurrency=${_CONCURRENCY}'
       - '--min-instances=0'
       - '--max-instances=2'
       - '--cpu-boost'
-      - '--set-env-vars=OMP_NUM_THREADS=2,RVC_F0_METHOD=rmvpe,RVC_WARMUP=1'
+      - '--set-env-vars=VOICE_MODE=${_VOICE_MODE},OMP_NUM_THREADS=2${_EXTRA_ENV}'
