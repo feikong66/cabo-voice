@@ -1,26 +1,31 @@
-"""CABO voice service — Gradio SDK build for the free HF Spaces tier.
+"""CABO all-in-one service — scoreboard PWA + Edge TTS -> RVC voice backend.
 
-The CABO PWA talks to this service over a small REST API:
+Everything is served from ONE origin, which removes the two failure modes that
+kept phones on the built-in system voice:
+
+  * mixed content — an HTTPS page may not call an HTTP voice endpoint,
+  * CORS — cross-origin POST /tts was blocked by the browser.
+
+Routes
   GET  /healthz        liveness + per-model presence
   GET  /models         list of RVC voice models (id + bilingual labels)
   POST /tts            {text, lang, model} -> audio/wav
+  GET  /               the CABO web app (static)
 
-On the free (Gradio) tier there is no Dockerfile, so instead of a COPY layer we:
-  * clone the official RVC repo at startup into ./rvc,
-  * put imageio-ffmpeg's static binary on PATH (no system ffmpeg in the image),
-  * launch a tiny Gradio UI and mount the REST routes on the same ASGI app.
+Gradio is intentionally NOT used: it costs ~150MB RSS and we only need REST.
 """
 import os
 import subprocess
 import tempfile
 import uuid
 
-# ---- 0. runtime bootstrap (no Dockerfile on the Gradio tier) ----
 HERE = os.path.dirname(os.path.abspath(__file__))
 RVC_REPO = os.environ.get("RVC_REPO", os.path.join(HERE, "rvc"))
+WEB_DIR = os.environ.get("CABO_WEB_DIR", os.path.join(HERE, "web"))
 
 
 def ensure_rvc():
+    """Clone the official RVC repo when the image did not bake it in."""
     if os.path.exists(os.path.join(RVC_REPO, "infer_cli.py")):
         return
     print("[bootstrap] cloning RVC repo ->", RVC_REPO, flush=True)
@@ -50,13 +55,28 @@ from tts import tts_to_wav
 from rvc import convert
 
 CFG = apply_env(load_config())
-# Point RVC at the cloned repo (relative to the workspace).
 CFG.setdefault("rvc", {})["repo"] = RVC_REPO
 CFG["rvc"]["infer_script"] = os.path.join(RVC_REPO, "infer_cli.py")
 
-# ---- 1. REST handlers (Starlette) ----
+# Drop models whose weights are absent from the image so /models never offers a
+# voice that would fail at synthesis time (index files are optional).
+_rvc = CFG.get("rvc", {})
+_present = {mid: m for mid, m in (_rvc.get("models") or {}).items()
+            if os.path.exists(m.get("pth", ""))}
+if _present:
+    _rvc["models"] = _present
+    if _rvc.get("default_model") not in _present:
+        _rvc["default_model"] = next(iter(_present))
+for _mid, _m in (_rvc.get("models") or {}).items():
+    idx = _m.get("index") or ""
+    if idx and not os.path.exists(idx):
+        _m["index"] = ""   # index trimmed from the image to save RAM
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse, FileResponse
+from starlette.staticfiles import StaticFiles
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 
 def healthz(request: Request):
@@ -118,39 +138,40 @@ async def tts_ep(request: Request):
             pass
 
 
-# ---- 2. Gradio UI + mount our routes on the same ASGI app ----
-import gradio as gr
-from fastapi import FastAPI
+app = FastAPI(title="CABO — scoreboard + voice (Edge TTS + RVC)")
 
-fastapi_app = FastAPI(title="CABO Voice Service (Edge TTS + RVC)")
-
-# 允许跨域：CABO 前端（GitHub Pages / 局域网 IP 等）需要从浏览器直接调用 /tts，
-# 没有 CORS 头会被浏览器拦截，导致手机只能用系统嗓音兜底。
-from fastapi.middleware.cors import CORSMiddleware
-fastapi_app.add_middleware(
+# Same-origin is the normal case now, but keep CORS open so an externally hosted
+# CABO (e.g. GitHub Pages) can still point at this service.
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-demo = gr.Blocks(title="CABO Voice Service")
-with demo:
-    gr.Markdown(
-        "# CABO Voice Service (Edge TTS \u2192 RVC)\n"
-        "This Space powers CABO's announcer voices.\n\n"
-        "**REST API**\n\n"
-        "- `GET /healthz`\n"
-        "- `GET /models`\n"
-        "- `POST /tts`  body `{text, lang, model}` \u2192 `audio/wav`"
-    )
+# API routes are registered before the static mount so they win on conflicts.
+app.add_route("/healthz", healthz, methods=["GET"])
+app.add_route("/models", list_models, methods=["GET"])
+app.add_route("/tts", tts_ep, methods=["POST"])
 
-# Register our routes BEFORE mounting Gradio so they take precedence.
-fastapi_app.add_route("/healthz", healthz, methods=["GET"])
-fastapi_app.add_route("/models", list_models, methods=["GET"])
-fastapi_app.add_route("/tts", tts_ep, methods=["POST"])
+# The CABO web app, served from the same origin as /tts.
+if os.path.isdir(WEB_DIR):
+    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
+    print(f"[web] serving CABO from {WEB_DIR}", flush=True)
+else:
+    print(f"[web] no web dir at {WEB_DIR} — API only", flush=True)
 
-gradio.mount_gradio_app(fastapi_app, demo, path="/")
+
+@app.on_event("startup")
+def _warmup():
+    """Preload the engine off the request path so the first announcement in a
+    game is not stuck behind a ~60s cold load. Runs in a thread so the health
+    check can pass immediately. Disable with RVC_WARMUP=0."""
+    if os.environ.get("RVC_WARMUP", "1") != "1":
+        return
+    import threading
+    from rvc import warmup
+    threading.Thread(target=warmup, args=(CFG.get("rvc", {}),), daemon=True).start()
 
 
 if __name__ == "__main__":
@@ -159,4 +180,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT")
                or os.environ.get("GRADIO_SERVER_PORT")
                or CFG.get("port", 7860))
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=port)
+    print(f"[boot] listening on 0.0.0.0:{port}", flush=True)
+    uvicorn.run(app, host="0.0.0.0", port=port)

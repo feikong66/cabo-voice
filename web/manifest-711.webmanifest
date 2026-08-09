@@ -1,0 +1,14 @@
+{
+  "name": "卡波计分 Cabo Scorer（云端版）",
+  "short_name": "卡波计分",
+  "description": "卡波桌游计分工具 · 账号登录 · 云端存储",
+  "start_url": "./CABO_v0.7.1.1.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6f4",
+  "theme_color": "#2bb673",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

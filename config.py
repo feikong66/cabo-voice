@@ -26,6 +26,12 @@ def apply_env(cfg):
             dm["pitch"] = int(os.environ["RVC_PITCH"])
     if os.environ.get("RVC_DEVICE"):
         cfg["device"] = os.environ["RVC_DEVICE"]
+        rvc["device"] = os.environ["RVC_DEVICE"]
+    # `pm` skips the ~180MB rmvpe model — the lever to pull on small instances.
+    if os.environ.get("RVC_F0_METHOD"):
+        rvc["f0_method"] = os.environ["RVC_F0_METHOD"]
+    if os.environ.get("RVC_INDEX_RATE"):
+        rvc["index_rate"] = float(os.environ["RVC_INDEX_RATE"])
     if os.environ.get("EDGE_VOICE_ZH"):
         cfg["edge_voice_zh"] = os.environ["EDGE_VOICE_ZH"]
     if os.environ.get("EDGE_VOICE_EN"):

@@ -1,12 +1,39 @@
-# CABO 语音服务（Edge TTS + RVC）
+# CABO 一体化服务（计分网页 + Edge TTS + RVC）
 
-把 CABO 计分器的「语音播报」从系统机械嗓音，升级成你训练好的 **RVC 角色音色**。
+一个容器同时提供 **CABO 计分网页** 和 **RVC 变声后端**，共用一个 HTTPS 域名。
 
 链路：`文本 → Edge TTS 念出来（中性源音色）→ RVC 转成目标角色音色 → 返回 WAV`
 
-- **源音色**：微软 Edge TTS（免费、神经、自然），中文默认 `XiaoxiaoNeural`，英文默认 `AriaNeural`。
-- **目标音色**：你的 RVC 模型，支持**多个**随时切换（见下方模型清单）。
-- 服务是独立的 Python 后端（FastAPI/Starlette），前端 PWA 通过 `POST /tts` 调用，拿回音频播放。可用 **Docker** 部署到 Railway / Render / Koyeb / Fly 免费档，或 Hugging Face Spaces（Gradio SDK，需 PRO）。
+## 为什么要合成一个服务
+
+分开部署时，手机上的 RVC 永远用不了，原因是两条浏览器安全规则：
+
+- **混合内容**：网页是 `https://`，语音服务是 `http://` → 请求被直接拦截；
+- **跨域**：即使语音服务上了 HTTPS，跨域 `POST /tts` 还要额外配置 CORS。
+
+网页和接口同源之后，这两条同时消失，**手机打开网址就能用，无需填任何地址**——前端启动时会探测同源 `/healthz`，命中就自动启用 RVC。
+
+## 接口
+
+| 路由 | 说明 |
+|------|------|
+| `GET /` | CABO 计分网页 |
+| `GET /healthz` | 存活探测 + 各音色是否就位 |
+| `GET /models` | 音色列表 |
+| `POST /tts` | `{text, lang, model}` → `audio/wav` |
+
+## 内存要求（重要）
+
+容器常驻 `torch + HuBERT + 一个音色模型`，实测稳态约 **600–800MB**：
+
+| 平台档位 | 内存 | 结论 |
+|----------|------|------|
+| Render Free / Starter | 512MB | ❌ 会被 OOM 杀掉 |
+| Render Standard | 2GB | ✅ 可用 |
+| Google Cloud Run（2GB，缩容到零） | 2GB | ✅ 个人用量基本在免费额度内 |
+| Hugging Face Space（免费 CPU） | 16GB | ✅ 内存最宽裕 |
+
+省内存的开关：设 `RVC_F0_METHOD=pm` 可跳过约 180MB 的 rmvpe 模型（音高精度略降）；`INCLUDE_INDEX=0`（默认）不打包 `.index` 文件，镜像和内存都显著变小。
 
 ---
 

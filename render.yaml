@@ -1,0 +1,36 @@
+# Render Blueprint — CABO all-in-one (scoreboard + RVC voice).
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+#
+# PLAN / MEMORY — read before changing `plan`:
+#   The container holds torch + HuBERT + one voice model in RAM. Measured
+#   steady state is roughly 600-800MB, so:
+#     free    (512MB)  -> OOM, the process is killed mid-request
+#     starter (512MB)  -> same, paying does not add memory on this tier
+#     standard (2GB)   -> comfortable, this is the smallest plan that works
+#   If you want to try a smaller box, set RVC_F0_METHOD=pm below: it skips the
+#   ~180MB rmvpe model at some cost in pitch accuracy.
+services:
+  - type: web
+    name: cabo
+    runtime: docker
+    plan: standard
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # Which voice weights to bake in. "*" = all ten; narrow it (e.g. "nanami*")
+      # for a much smaller image and faster builds.
+      - key: MODEL_ALLOW
+        value: "*"
+      # .index files improve timbre similarity but are large and RAM-hungry.
+      - key: INCLUDE_INDEX
+        value: "0"
+      # rmvpe = best pitch tracking; pm = lighter and faster.
+      - key: RVC_F0_METHOD
+        value: rmvpe
+      # Keep CPU threads modest so torch does not oversubscribe a shared core.
+      - key: OMP_NUM_THREADS
+        value: "2"

@@ -1,31 +1,36 @@
-# CABO voice service — Gradio SDK (free HF Spaces tier)
-# CPU-only torch is pulled from the PyTorch CPU index (kept first so the
-# RVC deps below don't accidentally pull a CUDA build).
+# CABO all-in-one service — CPU only.
+# fairseq and rvc-python are installed separately in the Dockerfile because
+# fairseq 0.12.2 ships no wheel for Python >= 3.9 and needs a legacy build
+# environment; pinning it here would break resolution for everything else.
 --extra-index-url https://download.pytorch.org/whl/cpu
+
+# rvc-python caps numpy at 1.23.5; torch/faiss below are chosen to match it.
+numpy==1.23.5
 torch==2.3.1+cpu
 torchaudio==2.3.1+cpu
 
-# App / API
-gradio
+# Web layer
 fastapi
 uvicorn[standard]
+starlette
+pydantic
+python-multipart
+
+# Source TTS + audio IO
 edge-tts
 imageio-ffmpeg
-
-# RVC inference dependencies (infer_cli.py, infer_pack, vc_infer_pipeline, ...)
-fairseq
-librosa
 soundfile
-pyworld
-praat-parselmouth
-pyrubberband
-matplotlib
-numpy
+librosa==0.10.2
 scipy
-numba
-colorama
-tensorboardX
+
+# RVC runtime deps (rvc-python is installed with --no-deps)
+faiss-cpu==1.7.3
+praat-parselmouth>=0.4.2
+pyworld
+torchcrepe
 ffmpeg-python
-beautifulsoup4
-resampy
-pyyaml
+av
+loguru
+requests
+omegaconf==2.0.6
+hydra-core==1.0.7
