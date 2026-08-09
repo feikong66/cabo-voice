@@ -1,0 +1,93 @@
+{
+  "host": "0.0.0.0",
+  "port": 7860,
+  "device": "cpu",
+  "request_timeout_sec": 60,
+  "edge_voice_zh": "zh-CN-XiaoxiaoNeural",
+  "edge_voice_en": "en-US-AriaNeural",
+  "rvc": {
+    "enabled": true,
+    "repo": "rvc",
+    "infer_script": "rvc/infer_cli.py",
+    "default_model": "nanami",
+    "models": {
+      "nanami": {
+        "label_zh": "奈奈美（女声·带索引）",
+        "label_en": "Nanami (female, indexed)",
+        "pth": "models/nanami_e500.pth",
+        "index": "models/nanami_v2.index",
+        "pitch": 0
+      },
+      "lwjhh": {
+        "label_zh": "LWJHH",
+        "label_en": "LWJHH",
+        "pth": "models/LWJHH-Final-2.pth",
+        "index": "",
+        "pitch": 0
+      },
+      "daboluo": {
+        "label_zh": "大菠萝",
+        "label_en": "Daboluo",
+        "pth": "models/daboluo.pth",
+        "index": "",
+        "pitch": 0
+      },
+      "jaychou": {
+        "label_zh": "周杰伦",
+        "label_en": "Jay Chou",
+        "pth": "models/jaychou.pth",
+        "index": "models/jaychou.index",
+        "pitch": 0
+      },
+      "venti": {
+        "label_zh": "原神·温迪",
+        "label_en": "Genshin Venti",
+        "pth": "models/venti.pth",
+        "index": "models/venti.index",
+        "pitch": 0
+      },
+      "march7": {
+        "label_zh": "三月七",
+        "label_en": "March 7th",
+        "pth": "models/march7.pth",
+        "index": "models/march7.index",
+        "pitch": 0
+      },
+      "ayaka": {
+        "label_zh": "神里绫华",
+        "label_en": "Kamisato Ayaka",
+        "pth": "models/ayaka.pth",
+        "index": "models/ayaka.index",
+        "pitch": 0
+      },
+      "luotianyi": {
+        "label_zh": "洛天依",
+        "label_en": "Luo Tianyi",
+        "pth": "models/luotianyi.pth",
+        "index": "models/luotianyi.index",
+        "pitch": 0
+      },
+      "yexiu": {
+        "label_zh": "叶修",
+        "label_en": "Ye Xiu",
+        "pth": "models/yexiu.pth",
+        "index": "models/yexiu.index",
+        "pitch": 0
+      },
+      "jackie": {
+        "label_zh": "成龙",
+        "label_en": "Jackie Chan",
+        "pth": "models/jackie.pth",
+        "index": "models/jackie.index",
+        "pitch": 0
+      }
+    },
+    "sample_rate": 40000,
+    "f0_method": "rmvpe",
+    "index_rate": 0.75,
+    "filter_radius": 3,
+    "resample_sr": 0,
+    "rms_mix_rate": 1,
+    "protect": 0.33
+  }
+}

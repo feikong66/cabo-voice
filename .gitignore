@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+models/*.pth
+models/*.index
+*.wav
+.env
+_push_hf.py
+_copy_models.py
+._*.txt
+*.log

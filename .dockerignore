@@ -1,0 +1,15 @@
+# Keep the build context small: model weights (1.7GB) are downloaded at
+# build time from the HF model repo, they must NOT be in the context.
+models/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+_push_hf.py
+_copy_models.py
+._*.txt
+*.log
+.git
+.gitignore
+.dockerignore
