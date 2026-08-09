@@ -61,6 +61,9 @@ uvicorn app:fastapi_app --port 7860
 # 或： python app.py
 ```
 
+> 服务已开启 **CORS（`allow_origins=["*"]`）**，所以手机/浏览器从 GitHub Pages 等跨域页面也能直接调用 `/tts`，不会被浏览器拦截。
+> 想让手机用上 RVC：在本机跑起服务后，把管理员面板/设置页的「RVC 语音服务地址」填成 `http://<本机局域网IP>:7860`（手机连同一 Wi-Fi），保存即自动同步到其他设备。
+
 测试：
 
 ```bash
