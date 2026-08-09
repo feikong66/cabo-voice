@@ -123,6 +123,17 @@ import gradio as gr
 from fastapi import FastAPI
 
 fastapi_app = FastAPI(title="CABO Voice Service (Edge TTS + RVC)")
+
+# 允许跨域：CABO 前端（GitHub Pages / 局域网 IP 等）需要从浏览器直接调用 /tts，
+# 没有 CORS 头会被浏览器拦截，导致手机只能用系统嗓音兜底。
+from fastapi.middleware.cors import CORSMiddleware
+fastapi_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 demo = gr.Blocks(title="CABO Voice Service")
 with demo:
     gr.Markdown(
