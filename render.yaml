@@ -1,36 +1,40 @@
-# Render Blueprint — CABO all-in-one (scoreboard + RVC voice).
+# Render Blueprint — CABO all-in-one (scoreboard + AI voice).
 #
 # Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
 #
 # PLAN / MEMORY — read before changing `plan`:
-#   The container holds torch + HuBERT + one voice model in RAM. Measured
-#   steady state is roughly 600-800MB, so:
-#     free    (512MB)  -> OOM, the process is killed mid-request
-#     starter (512MB)  -> same, paying does not add memory on this tier
-#     standard (2GB)   -> comfortable, this is the smallest plan that works
-#   If you want to try a smaller box, set RVC_F0_METHOD=pm below: it skips the
-#   ~180MB rmvpe model at some cost in pitch accuracy.
+#   Default VOICE_MODE=tts is a thin Edge TTS proxy: no torch, no model
+#   weights. Measured steady state is ~70MB (73MB under 6 concurrent
+#   requests), so the 512MB free plan is plenty.
+#
+#   Switching to VOICE_MODE=rvc changes everything: torch + HuBERT + one voice
+#   model push steady state to 600-800MB, which means
+#     free     (512MB) -> OOM, killed mid-request
+#     starter  (512MB) -> same; paying does not add memory on this tier
+#     standard (2GB)   -> the smallest plan that actually works
+#   RVC also needs the image built with --build-arg VOICE_MODE=rvc, so flipping
+#   the env var alone is not enough.
 services:
   - type: web
     name: cabo
     runtime: docker
-    plan: standard
+    plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
     autoDeploy: true
+    dockerBuildArgs:
+      VOICE_MODE: tts
     envVars:
-      # Which voice weights to bake in. "*" = all ten; narrow it (e.g. "nanami*")
-      # for a much smaller image and faster builds.
-      - key: MODEL_ALLOW
-        value: "*"
-      # .index files improve timbre similarity but are large and RAM-hungry.
-      - key: INCLUDE_INDEX
-        value: "0"
-      # rmvpe = best pitch tracking; pm = lighter and faster.
-      - key: RVC_F0_METHOD
-        value: rmvpe
-      # Keep CPU threads modest so torch does not oversubscribe a shared core.
-      - key: OMP_NUM_THREADS
-        value: "2"
+      # tts = Edge TTS only (light). rvc = voice conversion (see note above).
+      - key: VOICE_MODE
+        value: tts
+      # Default voices; any id from GET /voices works.
+      - key: EDGE_VOICE_ZH
+        value: zh-CN-YunjianNeural
+      - key: EDGE_VOICE_EN
+        value: en-US-AriaNeural
+      # Slightly brisk delivery suits score callouts.
+      - key: EDGE_RATE
+        value: "+10%"
