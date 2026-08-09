@@ -1,0 +1,32 @@
+# Extra dependencies for VOICE_MODE=rvc (custom character voices).
+#
+# Install on top of requirements.txt. Needs ~2GB RAM at runtime, so it will be
+# OOM-killed on a 512MB free tier — see README for sizing.
+#
+# fairseq and rvc-python are NOT listed here: fairseq 0.12.2 ships no wheel for
+# Python >= 3.9 and needs a legacy build environment, so the Dockerfile installs
+# them separately with fallbacks. Pinning them here would break resolution for
+# everything else.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# rvc-python caps numpy at 1.23.5; torch/faiss below are chosen to match it.
+numpy==1.23.5
+torch==2.3.1+cpu
+torchaudio==2.3.1+cpu
+
+# Audio IO (the RVC path converts MP3 -> 16k mono WAV before inference)
+imageio-ffmpeg
+soundfile
+librosa==0.10.2
+scipy
+
+faiss-cpu==1.7.3
+praat-parselmouth>=0.4.2
+pyworld
+torchcrepe
+ffmpeg-python
+av
+loguru
+requests
+omegaconf==2.0.6
+hydra-core==1.0.7
