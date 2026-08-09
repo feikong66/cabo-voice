@@ -1,36 +1,13 @@
-# CABO all-in-one service — CPU only.
-# fairseq and rvc-python are installed separately in the Dockerfile because
-# fairseq 0.12.2 ships no wheel for Python >= 3.9 and needs a legacy build
-# environment; pinning it here would break resolution for everything else.
---extra-index-url https://download.pytorch.org/whl/cpu
+# CABO voice service — default (VOICE_MODE=tts).
+#
+# Deliberately tiny: Edge TTS is a WebSocket client, so there is no model to
+# load and no torch. Installs in ~20s, image lands around 200MB, RSS ~80MB —
+# comfortably inside a 512MB free tier.
+#
+# For the RVC character-voice mode install requirements-rvc.txt on top; that
+# pulls torch and needs ~2GB RAM.
 
-# rvc-python caps numpy at 1.23.5; torch/faiss below are chosen to match it.
-numpy==1.23.5
-torch==2.3.1+cpu
-torchaudio==2.3.1+cpu
-
-# Web layer
+edge-tts>=7.0.0
 fastapi
 uvicorn[standard]
 starlette
-pydantic
-python-multipart
-
-# Source TTS + audio IO
-edge-tts
-imageio-ffmpeg
-soundfile
-librosa==0.10.2
-scipy
-
-# RVC runtime deps (rvc-python is installed with --no-deps)
-faiss-cpu==1.7.3
-praat-parselmouth>=0.4.2
-pyworld
-torchcrepe
-ffmpeg-python
-av
-loguru
-requests
-omegaconf==2.0.6
-hydra-core==1.0.7
