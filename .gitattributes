@@ -1,0 +1,9 @@
+# Shell scripts and Dockerfiles must keep LF endings. Checked out with CRLF on
+# Windows (core.autocrlf=true) and then run on Linux — Cloud Shell, Cloud Build,
+# the container itself — they fail with "bad interpreter: ...^M", which reads as
+# a broken script rather than a line-ending problem.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.py        text eol=lf
