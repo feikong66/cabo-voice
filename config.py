@@ -36,4 +36,9 @@ def apply_env(cfg):
         cfg["edge_voice_zh"] = os.environ["EDGE_VOICE_ZH"]
     if os.environ.get("EDGE_VOICE_EN"):
         cfg["edge_voice_en"] = os.environ["EDGE_VOICE_EN"]
+    # Server-side default speaking rate, e.g. "+10%". The client may override
+    # it per request; announcements sound better slightly faster than default.
+    if os.environ.get("EDGE_RATE"):
+        cfg["rate"] = os.environ["EDGE_RATE"]
+    cfg.setdefault("rate", "+10%")
     return cfg
