@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>卡波计分 · Cabo Scorer</title>
-<link rel="manifest" href="manifest-711.webmanifest">
+<link rel="manifest" href="manifest-721.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <meta name="theme-color" content="#2e7d52">
 <style>
@@ -361,7 +361,7 @@ input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(43
 .room-link{font-size:11px;color:var(--muted);word-break:break-all;text-align:center;margin-top:8px;line-height:1.5}
 .room-or{display:flex;align-items:center;gap:10px;margin:0 0 8px;color:var(--muted);font-size:13px}
 .room-or:before,.room-or:after{content:"";flex:1;height:1px;background:var(--line)}
-/* ===== v0.7.1.1 新功能样式 ===== */
+/* ===== v0.7.2.1 新功能样式 ===== */
 .lang-toggle{display:inline-flex;align-items:center;gap:6px}
 .voice-row{display:flex;align-items:center;gap:10px;margin:4px 0}
 .voice-row input[type=range]{flex:1;accent-color:var(--accent)}
@@ -387,9 +387,9 @@ input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(43
 <script src="xlsx.full.min.js"></script>
 <script>
 const KEY = "cabo-scorer-v2";
-const APP_VER = "v0.7.1.1";
+const APP_VER = "v0.7.2.1";
 
-/* ===== 多语言 i18n (v0.7.1.1) ===== */
+/* ===== 多语言 i18n (v0.7.2.1) ===== */
 const I18N = {
   zh: {
     appName:"卡波计分", settings:"设置", switchLang:"切换语言", toggleTheme:"切换深色 / 浅色",
@@ -398,7 +398,7 @@ const I18N = {
     lowWin:"低分胜", highWin:"高分胜", ruleCustom:"规则自定义",
     callerWins:"喊者胜", bothZero:"均 0 分",
     clearLocal:"清空本地存档", clearAuto:"清空自动存档", autoBadge:"自动", noSaves:"还没有保存的对局。", noMatchingSaves:"没有匹配的存档。",
-    darkMode:"深色模式", language:"语言", voiceAnnounce:"语音播报", volume:"音量", voiceName:"嗓音", voiceDefault:"系统默认（自动优选高品质）", voiceAutoHint:"自动选用当前系统最自然的嗓音",voiceServiceUrl:"RVC 语音服务地址",voiceServiceUrlHint:"填入部署好的语音服务地址即可用角色音色播报；留空则用系统嗓音",voiceModel:"RVC 音色",voiceModelHint:"选择要用的角色音色",mNanami:"奈奈美（女声·带索引）",mLwjhh:"LWJHH",mDaboluo:"大菠萝",cl66a:"新增：语音播报可接入 RVC 语音服务，使用你训练的角色音色（奈奈美 / LWJHH / 大菠萝）",cl66b:"新增：设置页新增「RVC 语音服务地址」与「RVC 音色」两项，填地址并选音色即可",voiceModel:"RVC 音色",voiceModelHint:"选择要用的角色音色",mNanami:"奈奈美（女声·带索引）",mLwjhh:"LWJHH",mDaboluo:"大菠萝",testConnection:"测试连接",connecting:"连接测试中…",rvcNotConn:"RVC 未连接，已用系统嗓音",rvcSync:"RVC 地址已同步到其他设备",
+    darkMode:"深色模式", language:"语言", voiceAnnounce:"语音播报", volume:"音量", voiceName:"嗓音", voiceDefault:"系统默认（自动优选高品质）", voiceAutoHint:"自动选用当前系统最自然的嗓音",voiceServiceUrl:"AI 配音服务地址",voiceServiceUrlHint:"填入部署好的配音服务地址即可用 AI 神经语音播报；留空则用系统嗓音",voiceModel:"AI 音色",voiceModelHint:"服务连上后会自动列出全部可选音色",mNanami:"奈奈美（女声·带索引）",mLwjhh:"LWJHH",mDaboluo:"大菠萝",cl66a:"新增：语音播报可接入 RVC 语音服务，使用你训练的角色音色（奈奈美 / LWJHH / 大菠萝）",cl66b:"新增：设置页新增「RVC 语音服务地址」与「RVC 音色」两项，填地址并选音色即可",voiceModel:"AI 音色",voiceModelHint:"服务连上后会自动列出全部可选音色",mNanami:"奈奈美（女声·带索引）",mLwjhh:"LWJHH",mDaboluo:"大菠萝",testConnection:"测试连接",connecting:"连接测试中…",rvcNotConn:"配音服务未连接，已用系统嗓音",rvcSync:"配音服务地址已同步到其他设备",
     changelog:"更新日志", changelogTitle:"更新日志",
     exportTitle:"📦 导出 / 导入本局", exportJson:"⬇ 导出 JSON", exportExcel:"⬇ 导出 Excel", exportPdf:"🖨 导出 PDF / 打印", importJson:"⬆ 导入 JSON", shareLink:"🔗 分享链接",
     login:"登录", register:"注册", skipLogin:"暂不登录，本地试用", username:"用户名", password:"密码",
@@ -444,7 +444,7 @@ const I18N = {
     lowWin:"Lowest wins", highWin:"Highest wins", ruleCustom:"Custom rules",
     callerWins:"Caller wins", bothZero:"Both 0",
     clearLocal:"Clear local saves", clearAuto:"Clear auto-save", autoBadge:"Auto", noSaves:"No saved games yet.", noMatchingSaves:"No matching saves.",
-    darkMode:"Dark mode", language:"Language", voiceAnnounce:"Voice announce", volume:"Volume", voiceName:"Voice", voiceDefault:"System default (auto-pick quality)", voiceAutoHint:"Automatically uses the most natural voice available",voiceServiceUrl:"RVC voice service URL",voiceServiceUrlHint:"Enter your deployed voice service URL to use the character voice; leave empty to use system voice",voiceModel:"RVC voice",voiceModelHint:"Pick the character voice to use",mNanami:"Nanami (female, indexed)",mLwjhh:"LWJHH",mDaboluo:"Daboluo",cl66a:"New: voice announce can use your RVC voice service for a custom character voice (Nanami / LWJHH / Daboluo)",cl66b:"New: settings now have an RVC voice service URL field and an RVC voice picker",voiceModel:"RVC voice",voiceModelHint:"Pick the character voice to use",mNanami:"Nanami (female, indexed)",mLwjhh:"LWJHH",mDaboluo:"Daboluo",testConnection:"Test connection",connecting:"Testing…",rvcNotConn:"RVC not connected, using system voice",rvcSync:"RVC URL synced to other devices",
+    darkMode:"Dark mode", language:"Language", voiceAnnounce:"Voice announce", volume:"Volume", voiceName:"Voice", voiceDefault:"System default (auto-pick quality)", voiceAutoHint:"Automatically uses the most natural voice available",voiceServiceUrl:"AI voice service URL",voiceServiceUrlHint:"Enter your deployed voice service URL for AI neural speech; leave empty to use the system voice",voiceModel:"AI voice",voiceModelHint:"The full list loads once the service connects",mNanami:"Nanami (female, indexed)",mLwjhh:"LWJHH",mDaboluo:"Daboluo",cl66a:"New: voice announce can use your RVC voice service for a custom character voice (Nanami / LWJHH / Daboluo)",cl66b:"New: settings now have an RVC voice service URL field and an RVC voice picker",voiceModel:"AI voice",voiceModelHint:"The full list loads once the service connects",mNanami:"Nanami (female, indexed)",mLwjhh:"LWJHH",mDaboluo:"Daboluo",testConnection:"Test connection",connecting:"Testing…",rvcNotConn:"Voice service not connected, using system voice",rvcSync:"Voice service URL synced to other devices",
     changelog:"Changelog", changelogTitle:"Changelog",
     exportTitle:"📦 Export / Import game", exportJson:"⬇ Export JSON", exportExcel:"⬇ Export Excel", exportPdf:"🖨 Export PDF / Print", importJson:"⬆ Import JSON", shareLink:"🔗 Share link",
     login:"Log in", register:"Register", skipLogin:"Skip, use locally", username:"Username", password:"Password",
@@ -541,6 +541,10 @@ const I18N = {
     "新增：多语言切换（中文 / 英文），设置里一键切换并记忆": "New: Language switch (Chinese / English), toggle in Settings and remembered",
     "新增：语音播报（分数变化、回合结算、胜利时刻），可开关与调音量": "New: Voice announce (score changes, round settlement, victory) — toggle and volume",
     "新增：更新日志（本弹窗）": "New: Changelog (this popup)",
+    "新增：AI 内置配音——14 种微软神经语音（含东北话、陕西话、粤语、台湾腔），设置页音色下拉自动列出，不再需要自训模型": "New: built-in AI voices — 14 Microsoft neural voices (including Northeastern, Shaanxi, Cantonese and Taiwanese accents), listed automatically in the settings picker, no self-trained model needed",
+    "优化：配音服务瘦身到约 70MB 内存，Render 免费档即可部署，构建从 20 分钟缩短到 2 分钟；原 RVC 角色音色改为可选模式，仍可继续使用": "Improved: the voice service now runs in ~70MB, fits a free Render plan, and builds in 2 minutes instead of 20; the RVC character voices remain available as an optional mode",
+    "修复：服务端在已运行的事件循环里嵌套调用 asyncio.run，导致部署后请求 502、手机静默退回系统嗓音": "Fixed: the server called asyncio.run inside an already-running event loop, which returned 502 and silently dropped phones back to the system voice",
+    "优化：选了服务上不存在的音色不再报错，自动退回该语言默认音色，旧设置不会让播报变哑": "Improved: an unknown voice id now falls back to the language default instead of erroring, so a stale setting cannot mute the callouts",
     "增强：深色模式此前已支持，本版补充系统主题跟随说明": "Enhanced: Dark mode already supported; this version adds system-theme-follow note",
     "房间成员名单 + 房主踢人（被踢者立即退场且不可重进）": "Room member list + host kick (kicked players leave immediately and can't rejoin)",
     "仅已登录玩家可创建 / 加入房间，游客不行": "Only logged-in players can create / join rooms; guests cannot",
@@ -874,7 +878,7 @@ const I18N = {
 function t(k, fb){ const d = (typeof state !== 'undefined' && state && state.lang && I18N[state.lang]) ? I18N[state.lang] : I18N.zh; if(d && d[k]!=null) return d[k]; if(fb!=null) return fb; if(I18N.zh[k]!=null) return I18N.zh[k]; return k; }
 function applyLang(){ try{ document.documentElement.lang = (state && state.lang==='en') ? 'en' : 'zh-CN'; }catch(e){} }
 
-/* ===== 语音播报 Voice announce (v0.7.1.1) ===== */
+/* ===== 语音播报 Voice announce (v0.7.2.1) ===== */
 let voiceOn = false, voiceVol = 1;
 function initVoice(){
   const v = (state && state.voice) || (state.voice = {on:false, volume:1, lang:null, serviceUrl:""});
@@ -926,12 +930,18 @@ function populateVoiceSelect(){
   sel.innerHTML = html;
   if(typeof window!=='undefined' && window.speechSynthesis){ try{ window.speechSynthesis.onvoiceschanged = ()=>{ const s=document.querySelector('#setVoice'); if(s) populateVoiceSelect(); }; }catch(e){} }
 }
+let _voiceLabels = {};   // 音色 id -> 显示名，由 refreshVoiceModels 填充
 function currentVoiceName(){
   const url = (typeof voiceBaseUrl === "function") ? voiceBaseUrl() : ((state.voice && state.voice.serviceUrl) || "");
   if(url){
-    const mid = (state.voice && state.voice.model) || "nanami";
+    const mid = (state.voice && state.voice.model) || "";
     const map = {nanami:(state.lang==='en'?'Nanami (female)':'奈奈美（女声）'), lwjhh:'LWJHH', daboluo:'大菠萝'};
-    return (map[mid] || mid) + (state.lang==='en' ? ' (RVC)' : '（RVC）');
+    const label = _voiceLabels[mid] || map[mid] || mid;
+    if(!label) return state.lang==='en' ? 'Neural voice' : 'AI 语音';
+    // Edge 神经语音的 id 形如 zh-CN-YunjianNeural，与自训 RVC 音色区分开
+    const kind = /^[a-z]{2}-[A-Z]{2}/.test(mid) ? (state.lang==='en'?' (AI)':'（AI 配音）')
+                                                : (state.lang==='en'?' (RVC)':'（RVC）');
+    return label + kind;
   }
   const v = pickVoice(state.lang);
   return v ? v.name : (state.lang==='en' ? 'System default' : '系统默认');
@@ -951,7 +961,8 @@ function processSpeakQueue(){
   const text = speakQueue.shift();
   const v = state.voice || {};
   const url = voiceBaseUrl();
-  if(url){ speakRemote(text, url, v.model || "nanami", processSpeakQueue); }
+  // 不写死 nanami：没选过就交给服务端用它自己的默认音色（tts 模式下 nanami 并不存在）
+  if(url){ speakRemote(text, url, v.model || "", processSpeakQueue); }
   else { speakLocal(text, processSpeakQueue); }
 }
 
@@ -975,7 +986,10 @@ function speakRemote(text, baseUrl, model, cb){
   const ctrl = new AbortController();
   const to = setTimeout(()=>{ ctrl.abort(); if(cb) cb(); }, (state.voice && state.voice.timeout) || 15000);
   const body = {text:text, lang:lang};
-  if(model) body.model = model;
+  // 服务端两种模式各认一个参数名：rvc 认 model，tts 认 voice。
+  // 两个都带上，同一份前端就能对接任一模式；对不上的那个会被忽略。
+  if(model){ body.model = model; body.voice = model; }
+  if(state.voice && state.voice.rate) body.rate = state.voice.rate;
   fetch(endpoint, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(body), signal: ctrl.signal})
     .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.blob(); })
     .then(blob=>{ clearTimeout(to);
@@ -1034,9 +1048,15 @@ function voiceKamikaze(name){ if(!voiceOn) return; speak(fmt(t('voiceKamikaze'),
 function voiceHundred(name){ if(!voiceOn) return; speak(fmt(t('voiceHundred'), {name})); }
 function voiceWinner(name){ if(!voiceOn) return; speak((state.lang==='en' ? `Congratulations ${name} wins` : `${t(`恭喜`)}${name}${t(`获胜`)}`)); }
 
-/* ===== 更新日志 Changelog (v0.7.1.1) ===== */
+/* ===== 更新日志 Changelog (v0.7.2.1) ===== */
 function getChangelog(){
   return [
+    { v:"0.7.2", date:"2026-08-09", items:[
+      t("新增：AI 内置配音——14 种微软神经语音（含东北话、陕西话、粤语、台湾腔），设置页音色下拉自动列出，不再需要自训模型"),
+      t("优化：配音服务瘦身到约 70MB 内存，Render 免费档即可部署，构建从 20 分钟缩短到 2 分钟；原 RVC 角色音色改为可选模式，仍可继续使用"),
+      t("修复：服务端在已运行的事件循环里嵌套调用 asyncio.run，导致部署后请求 502、手机静默退回系统嗓音"),
+      t("优化：选了服务上不存在的音色不再报错，自动退回该语言默认音色，旧设置不会让播报变哑")
+    ]},
     { v:"0.7.1", date:"2026-08-09", items:[
       t("新增：自动升级——发布新版本后，手机/浏览器会自动刷新加载最新代码，无需手动清缓存"),
       t("新增：RVC 语音服务地址跨设备同步——在任意一台设备填好地址，其他设备（手机）自动拿到，不再各填各的"),
@@ -1116,7 +1136,7 @@ function openChangelog(){
   document.querySelector("#clClose").onclick = ()=> overlay.classList.add("hidden");
 }
 
-/* ===== 导出 Excel / PDF (v0.7.1.1) ===== */
+/* ===== 导出 Excel / PDF (v0.7.2.1) ===== */
 function exportExcel(){
   const ts = totals();
   const order = state.players.map((_,i)=>i).sort((a,b)=> state.winRule==="low" ? ts[a]-ts[b] : ts[b]-ts[a]);
@@ -1204,7 +1224,7 @@ function save(){
   if(subAuth.user){ subPush(); return; }
 }
 
-/* ===== 云端账号：GitHub Gist（v0.7.1.1） ===== */
+/* ===== 云端账号：GitHub Gist（v0.7.2.1） ===== */
 // 纯前端，无需服务器。登录用 GitHub 用户名 + Personal Access Token（需 gist 权限），
 // 数据存到用户本人名下的一个私有 Gist（cabo-data.json）。可直接用 GitHub Pages 托管。
 const GH_API = "https://api.github.com";
@@ -2847,7 +2867,7 @@ async function exportReportImage(reportText){
   drawButton(t("再来一局"), W/2+86, 130);
 
   // --- brand ---
-  drawText("Cabo Scorer v0.7.1.1", W/2, H-16, 11, "rgba(255,255,255,.45)", "400", "center");
+  drawText("Cabo Scorer v0.7.2.1", W/2, H-16, 11, "rgba(255,255,255,.45)", "400", "center");
 
   // --- output ---
   try{
@@ -2986,17 +3006,37 @@ function openSavedReport(id){
   openReportModal(text);
 }
 
+/* 音色下拉。服务端有两种模式：
+   tts —— 微软 Edge 神经语音，音色来自 /voices；
+   rvc —— 自训角色音色，来自 /models。
+   先问 /models：它会带 mode 字段，且 tts 模式下 models 为空，
+   这时再去拉 /voices。老版本服务没有 mode 字段，按 models 是否为空判断，向后兼容。 */
 function refreshVoiceModels(){
   const sel = document.querySelector("#setVoiceModel");
   if(!sel) return;
-  const cur = (state.voice && state.voice.model) || "nanami";
-  const url = (state.voice && state.voice.serviceUrl) || "";
+  const cur = (state.voice && state.voice.model) || "";
+  const url = voiceBaseUrl();
   const defs = [["nanami", t("mNanami")],["lwjhh", t("mLwjhh")],["daboluo", t("mDaboluo")]];
-  const fill = (list)=>{ sel.innerHTML = list.map(([id,lab])=>'<option value="'+id+'">'+escapeHtml(lab)+'</option>').join(""); sel.value = (list.some(x=>x[0]===cur)? cur : list[0][0]); };
+  const fill = (list)=>{
+    if(!list || !list.length) return;
+    list.forEach(([id,lab])=>{ _voiceLabels[id] = lab; });
+    sel.innerHTML = list.map(([id,lab])=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(lab)+'</option>').join("");
+    sel.value = (list.some(x=>x[0]===cur) ? cur : list[0][0]);
+  };
   fill(defs);
   if(!url) return;
-  fetch(url.replace(/\/+$/,'') + "/models", {method:"GET"}).then(r=> r.ok? r.json():null).then(j=>{
-    if(j && j.models && j.models.length){ fill(j.models.map(m=>[m.id, (state.lang==='en'? m.label_en : m.label_zh) || m.id])); }
+  const base = url.replace(/\/+$/,'');
+  fetch(base + "/models", {method:"GET"}).then(r=> r.ok? r.json():null).then(j=>{
+    if(j && j.models && j.models.length){
+      fill(j.models.map(m=>[m.id, (state.lang==='en'? m.label_en : m.label_zh) || m.id]));
+      return null;
+    }
+    return fetch(base + "/voices", {method:"GET"}).then(r=> r.ok? r.json():null);
+  }).then(j=>{
+    if(j && j.voices && j.voices.length){
+      fill(j.voices.map(v=>[v.id, (state.lang==='en'? v.label_en : v.label_zh) || v.id]));
+      if(!j.voices.some(v=>v.id===cur) && j.default) sel.value = j.default;
+    }
   }).catch(()=>{});
 }
 function openSettings(){
@@ -3116,7 +3156,7 @@ function openSettings(){
   }; }
   document.querySelector("#saveSet").onclick = ()=>{
     const _vu = document.querySelector("#setVoiceUrl"); if(_vu){ state.voice = state.voice||{on:false,volume:1,lang:null,serviceUrl:""}; state.voice.serviceUrl = (_vu.value||"").trim(); }
-    const _vm = document.querySelector("#setVoiceModel"); if(_vm){ state.voice = state.voice||{on:false,volume:1,lang:null,serviceUrl:""}; state.voice.model = _vm.value || "nanami"; }
+    const _vm = document.querySelector("#setVoiceModel"); if(_vm){ state.voice = state.voice||{on:false,volume:1,lang:null,serviceUrl:""}; state.voice.model = _vm.value || ""; }
     if(state.voice.serviceUrl) voiceCfgSave(state.voice.serviceUrl, state.voice.model || "nanami");
     state.players.forEach((p,i)=>{ const el=document.getElementById("sname-"+i); if(el) p.name = el.value.trim()||(t("玩家")+(i+1)); });
     const es = parseInt(document.querySelector("#setEnd").value,10); if(es>0) state.endScore = es;
@@ -4069,7 +4109,7 @@ function openExportImport(){
   document.querySelector("#eiFile").onchange = e=>{ if(e.target.files[0]) importStateFromFile(e.target.files[0]); };
 }
 
-/* ===== 双设备实时同步（v0.7.1.1，opt-in，仅云端登录生效） ===== */
+/* ===== 双设备实时同步（v0.7.2.1，opt-in，仅云端登录生效） ===== */
 let syncEnabled = false;
 let syncTimer = null;
 const SYNC_INTERVAL = 4000;
@@ -4143,7 +4183,7 @@ async function subAutoLogin(){
   }
 }
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
-  navigator.serviceWorker.register("sw-v0.7.1.1.js", {updateViaCache:"none"}).catch(()=>{});
+  navigator.serviceWorker.register("sw-v0.7.2.1.js", {updateViaCache:"none"}).catch(()=>{});
   // 自动升级：新版本的 Service Worker 接管后，自动刷新一次以加载新代码
   let _swReloading = false;
   navigator.serviceWorker.addEventListener("controllerchange", function(){
