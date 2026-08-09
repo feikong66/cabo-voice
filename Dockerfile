@@ -81,5 +81,7 @@ RUN mkdir -p /app/rvc_models
 COPY config.py tts.py rvc.py app.py config.json /app/
 COPY web /app/web
 
+# Informational only. The app binds whatever $PORT the platform injects
+# (Cloud Run sends 8080, Render 10000) and falls back to 7860 locally.
 EXPOSE 7860
 CMD ["python", "app.py"]

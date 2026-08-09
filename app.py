@@ -25,7 +25,17 @@ WEB_DIR = os.environ.get("CABO_WEB_DIR", os.path.join(HERE, "web"))
 
 
 def ensure_rvc():
-    """Clone the official RVC repo when the image did not bake it in."""
+    """Clone the official RVC checkout used by the subprocess fallback.
+
+    NOT called at import time. Inference normally runs through `rvc-python`
+    in-process, and upstream has since restructured the repo so `infer_cli.py`
+    no longer exists at the root — cloning on every boot would cost tens of
+    seconds and hundreds of MB for a file we would not find anyway. On serverless
+    platforms that delay is charged to every cold start and can trip the startup
+    probe. Opt in with RVC_ALLOW_CLONE=1 if you really want the legacy path.
+    """
+    if os.environ.get("RVC_ALLOW_CLONE", "0") != "1":
+        return
     if os.path.exists(os.path.join(RVC_REPO, "infer_cli.py")):
         return
     print("[bootstrap] cloning RVC repo ->", RVC_REPO, flush=True)
@@ -52,7 +62,7 @@ except Exception:
 
 from config import load_config, apply_env
 from tts import tts_to_wav
-from rvc import convert
+from rvc import convert, status as rvc_status
 
 CFG = apply_env(load_config())
 CFG.setdefault("rvc", {})["repo"] = RVC_REPO
@@ -88,6 +98,7 @@ def healthz(request: Request):
         "rvc_enabled": rvc.get("enabled", True),
         "default_model": rvc.get("default_model"),
         "models": status,
+        "engine": rvc_status(),
     })
 
 

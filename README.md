@@ -28,10 +28,10 @@
 
 | 平台档位 | 内存 | 结论 |
 |----------|------|------|
-| Render Free / Starter | 512MB | ❌ 会被 OOM 杀掉 |
-| Render Standard | 2GB | ✅ 可用 |
-| Google Cloud Run（2GB，缩容到零） | 2GB | ✅ 个人用量基本在免费额度内 |
-| Hugging Face Space（免费 CPU） | 16GB | ✅ 内存最宽裕 |
+| **Google Cloud Run**（2GiB，缩容到零） | 2GiB | ✅ **推荐**，个人用量基本在免费额度内 |
+| Render Free / Starter | 512MB | ❌ 必被 OOM；Starter 付了钱也还是 512MB |
+| Render Standard | 2GB | ✅ 可用，约 $25/月 |
+| Hugging Face Space（免费 CPU） | 16GB | ✅ 内存最宽裕，但跑 Python 需 PRO |
 
 省内存的开关：设 `RVC_F0_METHOD=pm` 可跳过约 180MB 的 rmvpe 模型（音高精度略降）；`INCLUDE_INDEX=0`（默认）不打包 `.index` 文件，镜像和内存都显著变小。
 
@@ -83,83 +83,111 @@
 cd voice-service
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-# RVC 仓库会在 app.py 启动时自动克隆到 ./rvc（无需手动准备）
-uvicorn app:fastapi_app --port 7860
-# 或： python app.py
+python app.py            # 或： uvicorn app:app --port 7860
 ```
 
-> 服务已开启 **CORS（`allow_origins=["*"]`）**，所以手机/浏览器从 GitHub Pages 等跨域页面也能直接调用 `/tts`，不会被浏览器拦截。
-> 想让手机用上 RVC：在本机跑起服务后，把管理员面板/设置页的「RVC 语音服务地址」填成 `http://<本机局域网IP>:7860`（手机连同一 Wi-Fi），保存即自动同步到其他设备。
+> 推理走 `rvc-python` **进程内常驻**：首次请求加载 HuBERT（约 30–60 秒），之后每次合成只有几秒。基础模型 `hubert_base.pt` / `rmvpe.pt` 由 `rvc-python` 首次初始化时自动下载（镜像已在构建阶段预下载）。
+
+**改了前端网页后，务必先同步再构建**，否则镜像里还是旧页面：
+
+```bash
+bash sync-web.sh          # 把上层最新的 CABO_v*.1.html 同步进 web/
+```
 
 测试：
 
 ```bash
+curl http://localhost:7860/healthz       # 健康检查（含引擎状态）
+curl http://localhost:7860/models        # 列出可用模型
+
 curl -X POST http://localhost:7860/tts \
   -H 'content-type: application/json' \
   -d '{"text":"恭喜小明卡波成功","lang":"zh","model":"nanami"}' --output out.wav
-
-curl http://localhost:7860/models        # 列出可用模型
-curl http://localhost:7860/healthz       # 健康检查
 ```
 
 ---
 
-## 3. 部署到云端（推荐，手机/好友都能用）
+## 3. 部署到云端
 
-GitHub Pages 只能托管静态页，**跑不了 Python**，所以语音服务必须单独部署。最省事的是**免费 Docker 主机**（不需要 HF PRO）。
+GitHub Pages 只能托管静态页、**跑不了 Python**。本镜像把网页和语音接口装在一起，部署完拿到的那一个 HTTPS 域名就是全部——**手机打开即用，不用填地址**。
 
-### 方案 A：免费 Docker 主机（Railway / Render / Koyeb / Fly）——推荐
+### 方案 A：Google Cloud Run —— 推荐
 
-这些平台都有免费 CPU 额度，直接用仓库里的 `Dockerfile` 构建。**模型权重在构建时自动从 Hugging Face 拉取**，你不用自己传 1.7GB 大文件。
-
-**通用步骤**（以 GitHub 仓库为来源）：
-
-1. 把本目录（`voice-service/`）推到一个 GitHub 仓库。
-2. 在平台新建服务，**连接该 GitHub 仓库**，**构建方式选 Docker / Dockerfile**（不要选 Node）。
-3. 平台会自动读 `Dockerfile`：`git clone` RVC 官方仓库 → 装 torch(CPU) → 从 `feikong66/cabo-rvc-models` 下载模型 → 启动 `app.py`。
-4. 端口：`app.py` 读 `$PORT`（Railway/Render 自动注入），默认 7860，一般无需手动设。
-5. 拿到地址（如 `https://cabo-voice.up.railway.app`），在 CABO 云端版 **管理员面板 → RVC 语音服务地址** 填入即可。
-
-**各平台要点：**
-
-| 平台 | 免费档 | 注意 |
-|------|--------|------|
-| **Railway** | $5 额度/月（够玩很久） | New → Deploy from GitHub repo → 选 Dockerfile；默认能联网拉取 HF/RVC。 |
-| **Render** | 512MB RAM，自动休眠 | New Web Service → 选仓库 → Runtime 选 `Docker`；免费实例休眠后首次请求慢。 |
-| **Koyeb** | nano 实例（0.1 vCPU/512MB） | 连接 GitHub → 选 Dockerfile；有免费额度。 |
-| **Fly.io** | 3 个共享 CPU VM | `fly launch` 用 Dockerfile；免费额度有限。 |
-
-> ⚠️ RVC CPU 推理约需 1–2GB 内存，免费档最低配可能偏紧；若 OOM，升级实例档位或在 `config.json` 降低并发。首次构建要装 torch + RVC 并下载模型，**约 5–15 分钟**。`PORT` 由平台注入。PWA 已做「失败自动降级系统 TTS」，服务挂了也不影响计分。
-
-### 方案 B：Hugging Face Spaces（Gradio SDK，**需 PRO 订阅**）
-
-> HF 免费档**只支持 Gradio / Static SDK，且运行 Python（Gradio）也需要 PRO**，否则创建时返回 402。已开通 PRO 才走这条：
+选它的理由很实在：**2GiB 内存够跑**，而且**没人用时自动缩容到零**，个人偶尔打牌的用量基本落在免费额度内。
 
 ```bash
-pip install -U huggingface_hub
-export HF_TOKEN=hf_xxxxxxxxxxxx
-export SPACE_ID=feikong66/cabo-voice
-python _push_hf.py        # Space 用 Gradio SDK 创建，权重走 Hub LFS
+cd voice-service
+gcloud config set project 你的项目ID     # 项目需已开通结算（免费额度内也要求开通）
+bash deploy-cloudrun.sh
 ```
 
-> 部署完在 Settings 打开 **Public**（或设 Access Token），否则前端跨域拉不到。
+脚本会自动启用所需 API、建好 Artifact Registry 仓库、构建并部署，最后打印访问地址。**首次构建约 15–25 分钟**（装 CPU 版 torch + 下载约 550MB 权重）。
+
+想换区域或只打包一个音色（镜像更小、构建更快）：
+
+```bash
+REGION=asia-northeast1 MODEL_ALLOW='nanami*' bash deploy-cloudrun.sh
+```
+
+关于费用和冷启动，有两点要有心理预期：
+
+- **冷启动 30–60 秒**。缩容到零之后，第一次开口要等实例拉起并加载模型。不想等就保持常驻，但**会离开免费额度、开始按小时计费**：
+  ```bash
+  gcloud run services update cabo --region asia-east1 \
+    --min-instances=1 --no-cpu-throttling
+  ```
+- **免费额度按用量计**（每月 180,000 vCPU-秒 / 360,000 GiB-秒）。按本服务 2 vCPU + 2GiB 换算，约合每月 **25 小时**的实际处理时间；合成一句话只占几秒，正常打牌远远用不完。额度以官方页面为准。
+
+### 方案 B：Render
+
+能跑，但**必须上 Standard（2GB，约 $25/月）**。免费档和 Starter 都是 512MB，**一定会 OOM**——注意 Starter 花了钱也不加内存，别白花。
+
+Dashboard → New → **Blueprint** → 选本仓库，它会读 `render.yaml`（其中 `plan: standard` 已经写好）。
+
+### 方案 C：Hugging Face Spaces（需 PRO）
+
+HF 免费档只给 Static SDK，跑 Python（Gradio/Docker）会在创建时返回 **402**。已开通 PRO 才走这条，好处是免费 CPU 档有 16GB 内存。
+
+### 其它平台
+
+Railway / Koyeb / Fly 同样支持 Docker 构建，选一个**内存 ≥ 1GB** 的档位即可，端口由 `$PORT` 自动注入，无需改代码。
 
 ---
 
 ## 4. 在前端（CABO PWA）里配置
 
-云端版 CABO：
-1. 进入 **管理员设置**（管理员面板），「**RVC 语音服务地址**」填部署得到的地址（如 `https://cabo-voice.up.railway.app` 或 HF Space 地址）。
-2. 在 **设置页 → RVC 音色** 下拉里选择音色（`nanami / jaychou / venti / march7 / ayaka / luotianyi / yexiu / jackie / lwjhh / daboluo`，下拉会从服务动态拉取）。
-3. 留空地址 → 自动用系统 TTS（Web Speech）。
+**一体化部署下：什么都不用配。** 打开 Cloud Run 给的地址，网页会探测同源 `/healthz`，命中就自动启用 RVC。
+
+只有当网页和语音服务**分开部署**时（例如网页仍放在 GitHub Pages）才需要手动填地址：
+
+1. **设置页 → RVC 语音服务地址**，填部署得到的地址，点「测试连接」。
+2. 地址**必须是 `https://`**：HTTPS 页面调用 HTTP 接口会被浏览器按混合内容直接拦截，`http://192.168.x.x` 和 `http://localhost` 在手机上都不可能成功。
+3. 留空 → 自动使用系统 TTS。
+
+音色在 **设置页 → RVC 音色** 下拉里选，列表由服务动态提供。
 
 ---
 
 ## 5. 排错
 
-- **RVC 推理报错 / 没输出**：多半是 `infer_cli.py` 参数名与 fork 不一致。改 `config.json` 的 `rvc.infer_args_template`（占位符：`{model} {index} {input} {output} {pitch} {sample_rate} {f0_method} {index_rate} {filter_radius} {resample_sr} {rms_mix_rate} {protect}`）。
-  - 官方 RVC-Project 的 `infer_cli.py` 通常**还需要 `-c <config.json>`**（和 `.pth` 同目录的那个配置文件）。如果日志报 `the following arguments are required: -c/--config`，把默认模板加上 `-c {config}` 并在 config.json 里给每个模型补 `"config": "models/xxx.json"`。
-  - 也可以改 `rvc.infer_script` / `rvc.repo` 指向你自己的 RVC fork 的 `infer_cli.py`。
+**先看健康检查**，它会直接告诉你引擎有没有起来：
+
+```bash
+curl -s https://你的地址/healthz
+```
+
+关注返回里的 `engine` 字段：
+
+- `engine_loaded: true` → RVC 正常；
+- `engine_error` 是一段非空字符串 → RVC 挂了，内容就是原因（最常见是 `fairseq` 没装上）。
+
+这一步很关键：**引擎坏掉时服务照样能开网页、健康检查照样通过**，唯一症状就是手机默默用回自带嗓音，不查这里很难发现。
+
+其它常见问题：
+
+- **第一次说话很慢**：冷启动加载 HuBERT，属正常；之后就快了。缩容到零的平台每次休眠后都会重来一次。
+- **构建卡在 fairseq**：它没有 Python 3.9+ 的预编译包，`Dockerfile` 已做三级回退（固定版本源码 → 社区 fork → 裸装）。三条都失败才会中断，日志里能看到具体是哪条。
 - **声音太尖/太闷**：调对应模型的 `pitch`（半音）。
-- **不像目标角色**：调高 `index_rate`，或确认 `sample_rate` 与训练时一致。
+- **不像目标角色**：调高 `index_rate`；若镜像未打包 `.index`（默认不打包），相似度本身会略降，可用 `INCLUDE_INDEX=1` 重建。
+- **内存被 OOM 杀掉**：设 `RVC_F0_METHOD=pm` 省掉约 180MB 的 rmvpe，或换更大内存档位。
 - **中文混英文**：Edge TTS 按 `lang` 选音色，建议混排文本统一语言传入。

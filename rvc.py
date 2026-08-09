@@ -154,6 +154,21 @@ def convert(src_wav: str, dst_wav: str, rvc_cfg: dict, model_id: str = None):
             return _infer_subprocess(src_wav, dst_wav, rvc_cfg, m)
 
 
+def status() -> dict:
+    """Engine state for /healthz — tells apart 'still warming' from 'broken'.
+
+    Worth surfacing: if the fairseq/rvc-python install went wrong the service
+    still serves the web app and answers health checks, and the only symptom is
+    silent fallback to the phone's built-in voice. This makes the cause visible
+    with a single curl instead of digging through platform logs.
+    """
+    return {
+        "engine_loaded": _ENGINE is not None,
+        "resident_voice": _CURRENT,
+        "engine_error": repr(_ENGINE_ERR) if _ENGINE_ERR is not None else None,
+    }
+
+
 def warmup(rvc_cfg: dict):
     """Preload engine + default voice so the first user request isn't slow."""
     try:
